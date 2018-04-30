@@ -1,5 +1,8 @@
 import { Injectable } from '@angular/core';
-import { JSONSchema, JSONSchemaType } from './json-schema';
+import {
+  JSONSchema, JSONSchemaObject, JSONSchemaEnum, JSONSchemaPrimitive,
+  JSONSchemaArray, JSONSchemaString, JSONSchemaNumeric, JSONSchemaConst
+} from './json-schema';
 
 /**
  * @todo Add other JSON Schema validation features
@@ -21,37 +24,23 @@ export class JSONValidator {
    */
   validate(data: any, schema: JSONSchema): boolean {
 
-    /** @todo When TS 2.8, explore if this is possible with conditional types */
-    if (((!(schema.hasOwnProperty('const') && schema.const !== undefined)
-    && !(schema.hasOwnProperty('enum') && schema.enum != null) && !(schema.hasOwnProperty('type') && schema.type != null))
-    || schema.type === 'array' || schema.type === 'object')
-    && !(schema.hasOwnProperty('properties') && schema.properties != null)  && !(schema.hasOwnProperty('items') && schema.items != null)) {
-
-      throw new Error(`Each value must have a 'type' or 'properties' or 'items' or 'const' or 'enum', to enforce strict types.`);
-
-    }
-
-    if (schema.hasOwnProperty('const') && schema.const !== undefined && (data !== schema.const)) {
+    if (schema.hasOwnProperty('const') && (schema as JSONSchemaConst).const !== undefined && (data !== (schema as JSONSchemaConst).const)) {
       return false;
     }
 
-    if (!this.validateEnum(data, schema)) {
+    if (!this.validateEnum(data, schema as JSONSchemaEnum)) {
       return false;
     }
 
-    if (!this.validateType(data, schema)) {
+    if (!this.validateType(data, schema as JSONSchemaPrimitive)) {
       return false;
     }
 
-    if (!this.validateItems(data, schema)) {
+    if (!this.validateItems(data, schema as JSONSchemaArray)) {
       return false;
     }
 
-    if (!this.validateProperties(data, schema)) {
-      return false;
-    }
-
-    if (!this.validateRequired(data, schema)) {
+    if (!this.validateProperties(data, schema as JSONSchemaObject)) {
       return false;
     }
 
@@ -65,7 +54,7 @@ export class JSONValidator {
 
   }
 
-  protected validateProperties(data: {}, schema: JSONSchema): boolean {
+  protected validateProperties(data: {}, schema: JSONSchemaObject): boolean {
 
     if (!schema.hasOwnProperty('properties') || (schema.properties == null)) {
       return true;
@@ -102,11 +91,15 @@ export class JSONValidator {
 
     }
 
+    if (!this.validateRequired(data, schema)) {
+      return false;
+    }
+
     return true;
 
   }
 
-  protected validateRequired(data: {}, schema: JSONSchema): boolean {
+  protected validateRequired(data: {}, schema: JSONSchemaObject): boolean {
 
     if (!schema.hasOwnProperty('required') || (schema.required == null)) {
       return true;
@@ -140,7 +133,7 @@ export class JSONValidator {
 
   }
 
-  protected validateEnum(data: any, schema: JSONSchema): boolean {
+  protected validateEnum(data: any, schema: JSONSchemaEnum): boolean {
 
     if (!schema.hasOwnProperty('enum') || (schema.enum == null)) {
       return true;
@@ -151,16 +144,10 @@ export class JSONValidator {
 
   }
 
-  protected validateType(data: any, schema: JSONSchema): boolean {
+  protected validateType(data: any, schema: JSONSchemaPrimitive): boolean {
 
     if (!schema.hasOwnProperty('type') || (schema.type == null)) {
       return true;
-    }
-
-    if (Array.isArray(schema.type)) {
-
-      return this.validateTypeList(data, schema);
-
     }
 
     if ((schema.type === 'null') && (data !== null)) {
@@ -171,13 +158,13 @@ export class JSONValidator {
 
     if (schema.type === 'string') {
 
-      return this.validateString(data, schema);
+      return this.validateString(data, schema as JSONSchemaString);
 
     }
 
     if ((schema.type === 'number') || (schema.type === 'integer')) {
 
-      return this.validateNumber(data, schema);
+      return this.validateNumber(data, schema as JSONSchemaNumeric);
 
     }
 
@@ -187,34 +174,11 @@ export class JSONValidator {
 
     }
 
-    if ((schema.type === 'object') && (typeof data !== 'object')) {
-
-      return false;
-
-    }
-
     return true;
 
   }
 
-
-  protected validateTypeList(data: any, schema: JSONSchema): boolean {
-
-    const types = schema.type as JSONSchemaType[];
-
-    const typesTests: boolean[] = [];
-
-    for (let type of types) {
-
-      typesTests.push(this.validateType(data, { type }));
-
-    }
-
-    return (typesTests.indexOf(true) !== -1);
-
-  }
-
-  protected validateItems(data: any[], schema: JSONSchema): boolean {
+  protected validateItems(data: any[], schema: JSONSchemaArray): boolean {
 
     if (!schema.hasOwnProperty('items') || (schema.items == null)) {
       return true;
@@ -286,7 +250,7 @@ export class JSONValidator {
 
   }
 
-  protected validateItemsList(data: any, schema: JSONSchema): boolean {
+  protected validateItemsList(data: any, schema: JSONSchemaArray): boolean {
 
     const items = schema.items as JSONSchema[];
 
@@ -308,7 +272,7 @@ export class JSONValidator {
 
   }
 
-  protected validateString(data: any, schema: JSONSchema): boolean {
+  protected validateString(data: any, schema: JSONSchemaString): boolean {
 
     if (typeof data !== 'string') {
       return false;
@@ -356,7 +320,7 @@ export class JSONValidator {
 
   }
 
-  protected validateNumber(data: any, schema: JSONSchema): boolean {
+  protected validateNumber(data: any, schema: JSONSchemaNumeric): boolean {
 
     if (typeof data !== 'number') {
       return false;

@@ -193,9 +193,10 @@ function tests(localStorage: LocalStorage) {
   it('should call error callback if the JSON schema itself is invalid', (done: DoneFn) => {
 
     const index = 'doesnotmatter';
-    const value = 'doesnotmatter';
+    const value = 14;
     const schema: JSONSchema = {
-      required: ['expected']
+      type: 'number',
+      multipleOf: 0
     };
 
     localStorage.setItem(index, value).subscribe(() => {

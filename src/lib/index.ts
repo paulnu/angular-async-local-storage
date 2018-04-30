@@ -1,4 +1,4 @@
-export { JSONSchema, JSONSchemaType } from './src/service/validation/json-schema';
+export { JSONSchema } from './src/service/validation/json-schema';
 export { LocalDatabase } from './src/service/databases/local-database';
 export { IndexedDBDatabase } from './src/service/databases/indexeddb-database';
 export { LocalStorageDatabase } from './src/service/databases/localstorage-database';

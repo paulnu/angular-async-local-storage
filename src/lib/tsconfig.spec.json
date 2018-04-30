@@ -5,5 +5,8 @@
     "module": "commonjs",
     "declaration": false,
     "emitDecoratorMetadata": true
-  }
+  },
+  "exclude": [
+    "src/service/validation/json-schema.test.ts"
+  ]
 }
