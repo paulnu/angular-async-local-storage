@@ -46,5 +46,6 @@ export abstract class LocalDatabase {
   abstract clear(): Observable<boolean>;
   abstract keys(): Observable<string[]>;
   abstract has(key: string): Observable<boolean>;
+  abstract getAll<T= any[]>(): Observable<T[] | null>;
 
 }

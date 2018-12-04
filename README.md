@@ -1,4 +1,4 @@
-# Async local storage for Angular
+# Async local storage for Angular forked by paul
 
 Efficient local storage module for Angular apps and Progressive Wep apps (PWA):
 - **simplicity**: based on native `localStorage` API and automatic JSON stringify/parse,

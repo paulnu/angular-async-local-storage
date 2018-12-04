@@ -48,6 +48,11 @@ export class LocalStorageDatabase implements LocalDatabase {
 
   }
 
+  getAll<T=any[]>(): Observable<T[] | null> {
+    return of([])
+    // return of(null)
+  }
+
   /**
    * Sets an item in local storage
    * @param key The item's key
@@ -105,7 +110,7 @@ export class LocalStorageDatabase implements LocalDatabase {
 
     for (let index = 0; index < localStorage.length; index += 1) {
 
-      if (key === this.getKey(index)) {
+      if (key === this.getKey(index)) {
 
         return of(true);
 

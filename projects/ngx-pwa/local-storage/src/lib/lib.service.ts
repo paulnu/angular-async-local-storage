@@ -28,7 +28,7 @@ export class LocalStorage {
     schema: null
   };
 
-  constructor(protected database: LocalDatabase, protected jsonValidator: JSONValidator) {}
+  constructor(protected database: LocalDatabase, protected jsonValidator: JSONValidator) { }
 
   /**
    * Gets an item value in local storage
@@ -84,6 +84,10 @@ export class LocalStorage {
 
     return this.database.getItem<T>(key);
 
+  }
+
+  getAll<T=any[]>(): Observable<T[] | null> {
+    return this.database.getAll()
   }
 
   /**
@@ -146,7 +150,7 @@ export class LocalStorage {
    */
   setItemSubscribe(key: string, data: any): void {
 
-    this.setItem(key, data).subscribe(() => {}, () => {});
+    this.setItem(key, data).subscribe(() => { }, () => { });
 
   }
 
@@ -154,16 +158,16 @@ export class LocalStorage {
    * Deletes an item in local storage, and auto-subscribes
    * @param key The item's key
    */
-   removeItemSubscribe(key: string): void {
+  removeItemSubscribe(key: string): void {
 
-    this.removeItem(key).subscribe(() => {}, () => {});
+    this.removeItem(key).subscribe(() => { }, () => { });
 
   }
 
   /** Deletes all items from local storage, and auto-subscribes */
   clearSubscribe(): void {
 
-    this.clear().subscribe(() => {}, () => {});
+    this.clear().subscribe(() => { }, () => { });
 
   }
 

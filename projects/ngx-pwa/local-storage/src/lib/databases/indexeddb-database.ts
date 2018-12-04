@@ -68,7 +68,6 @@ export class IndexedDBDatabase implements LocalDatabase {
    * Connects to IndexedDB
    */
   constructor(@Optional() @Inject(LOCAL_STORAGE_PREFIX) protected prefix: string | null = null) {
-
     if (prefix) {
 
       this.dbName = `${prefix}_${this.dbName}`;
@@ -88,7 +87,7 @@ export class IndexedDBDatabase implements LocalDatabase {
    * @param key The item's key
    * @returns The item's value if the key exists, null otherwise, wrapped in an RxJS Observable
    */
-  getItem<T = any>(key: string): Observable<T | null> {
+  getItem<T = any>(key: string): Observable<T | null> {
 
     /* Fallback storage if set */
     if (this.fallback) {
@@ -100,6 +99,32 @@ export class IndexedDBDatabase implements LocalDatabase {
 
   }
 
+  getAll<T=any[]>(): Observable<T[] | null> {
+    /* Fallback storage if set */
+    if (this.fallback) {
+      return this.fallback.getAll<T>();
+    }
+
+    return this.transaction('readonly').pipe(
+      mergeMap((transaction) => {
+
+        /* Deleting the item in local storage */
+        const request = transaction.getAll();
+
+        const success = (fromEvent(request, 'success') as Observable<Event>).pipe(
+          map((event) => (event.target as IDBRequest).result)
+        );
+
+        /* Merging success and errors events and autoclosing the observable */
+        return (race(success, this.toErrorObservable(request, `keys`)));
+
+      })
+      // ,first()
+    );
+
+    // return of([])
+    // return of(null)
+  }
   /**
    * Internal method to factorize the getter for getItem and setItem,
    * the last one needing to be from a preexisting transaction
@@ -107,7 +132,7 @@ export class IndexedDBDatabase implements LocalDatabase {
    * @param transactionParam Optional pre-existing transaction to use for the read request
    * @returns The item's value if the key exists, null otherwise, wrapped in an RxJS Observable
    */
-  private getItemFromTransaction<T = any>(key: string, transactionParam?: IDBObjectStore): Observable<T | null> {
+  private getItemFromTransaction<T = any>(key: string, transactionParam?: IDBObjectStore): Observable<T | null> {
 
     const transaction$ = transactionParam ? of(transactionParam) : this.transaction();
 
@@ -153,35 +178,35 @@ export class IndexedDBDatabase implements LocalDatabase {
     const transaction$ = this.transaction('readwrite');
     let transaction: IDBObjectStore;
 
-        /* Opening a transaction */
-        return transaction$.pipe(
-          tap((value) => {
-            transaction = value;
-          }),
-          /* Check if the key already exists or not */
-          mergeMap(() => this.getItemFromTransaction(key, transaction)),
-          map((existingData) => (existingData == null) ? 'add' : 'put'),
-          mergeMap((method) => {
+    /* Opening a transaction */
+    return transaction$.pipe(
+      tap((value) => {
+        transaction = value;
+      }),
+      /* Check if the key already exists or not */
+      mergeMap(() => this.getItemFromTransaction(key, transaction)),
+      map((existingData) => (existingData == null) ? 'add' : 'put'),
+      mergeMap((method) => {
 
-            let request: IDBRequest;
+        let request: IDBRequest;
 
-            /* Adding or updating local storage, based on previous checking */
-            switch (method) {
-              case 'add':
-                request = transaction.add({ [this.dataPath]: data }, key);
-                break;
-              case 'put':
-              default:
-                request = transaction.put({ [this.dataPath]: data }, key);
-                break;
-            }
+        /* Adding or updating local storage, based on previous checking */
+        switch (method) {
+          case 'add':
+            request = transaction.add({ [this.dataPath]: data }, key);
+            break;
+          case 'put':
+          default:
+            request = transaction.put({ [this.dataPath]: data }, key);
+            break;
+        }
 
-            /* Merging success (passing true) and error events and autoclosing the observable */
-            return (race(this.toSuccessObservable(request), this.toErrorObservable(request, `setter`)));
+        /* Merging success (passing true) and error events and autoclosing the observable */
+        return (race(this.toSuccessObservable(request), this.toErrorObservable(request, `setter`)));
 
-        }),
-        first()
-      );
+      }),
+      first()
+    );
 
   }
 
@@ -316,7 +341,7 @@ export class IndexedDBDatabase implements LocalDatabase {
 
       request = indexedDB.open(this.dbName);
 
-    } catch (error) {
+    } catch (error) {
 
       /* Fallback storage if IndexedDb connection is failing */
       this.setFallback(prefix);
