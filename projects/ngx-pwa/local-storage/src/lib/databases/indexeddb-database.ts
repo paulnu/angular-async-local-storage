@@ -108,22 +108,16 @@ export class IndexedDBDatabase implements LocalDatabase {
     return this.transaction('readonly').pipe(
       mergeMap((transaction) => {
 
-        /* Deleting the item in local storage */
         const request = transaction.getAll();
 
         const success = (fromEvent(request, 'success') as Observable<Event>).pipe(
           map((event) => (event.target as IDBRequest).result)
         );
-
         /* Merging success and errors events and autoclosing the observable */
-        return (race(success, this.toErrorObservable(request, `keys`)));
-
+        return (race(success, this.toErrorObservable(request)));
       })
-      // ,first()
+      , first()
     );
-
-    // return of([])
-    // return of(null)
   }
   /**
    * Internal method to factorize the getter for getItem and setItem,
@@ -143,7 +137,8 @@ export class IndexedDBDatabase implements LocalDatabase {
         /* Listening to the success event, and passing the item value if found, null otherwise */
         const success = (fromEvent(request, 'success') as Observable<Event>).pipe(
           map((event) => (event.target as IDBRequest).result),
-          map((result) => result && (this.dataPath in result) ? (result[this.dataPath] as T) : null)
+          map((result) => result ? (result as T) : null)
+          // map((result) => result && (this.dataPath in result) ? (result[this.dataPath] as T) : null)
         );
 
         /* Merging success and errors events and autoclosing the observable */
@@ -193,11 +188,13 @@ export class IndexedDBDatabase implements LocalDatabase {
         /* Adding or updating local storage, based on previous checking */
         switch (method) {
           case 'add':
-            request = transaction.add({ [this.dataPath]: data }, key);
+            // request = transaction.add({ [this.dataPath]: data }, key);
+            request = transaction.add(data, key);
             break;
           case 'put':
           default:
-            request = transaction.put({ [this.dataPath]: data }, key);
+            // request = transaction.put({ [this.dataPath]: data }, key);
+            request = transaction.put(data, key);
             break;
         }
 
